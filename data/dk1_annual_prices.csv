@@ -1,0 +1,22 @@
+# DK1 annual average day-ahead electricity price, EUR/MWh, nominal terms.
+# confidence:
+#   dk1_specific          -> DK1 bidding-zone-specific figure
+#   proxy_nordic_baltic    -> Nordic/Baltic regional average (ACER), used as a
+#                             proxy for years where no DK1-specific figure was
+#                             found; DK1 tracks this region reasonably well but
+#                             is more exposed to German interconnector flows,
+#                             so treat as lower-confidence than dk1_specific.
+#   dk1_specific_estimated -> DK1-specific but partial-year / estimated.
+# 2019 is a genuine data gap, left blank rather than interpolated.
+year,price_eur_per_mwh,confidence
+2015,25.4,proxy_nordic_baltic
+2016,29.4,proxy_nordic_baltic
+2017,31.0,proxy_nordic_baltic
+2018,45.4,proxy_nordic_baltic
+2019,,no_data
+2020,25.0,dk1_specific
+2021,88.0,dk1_specific
+2022,219.1,dk1_specific
+2023,86.8,dk1_specific
+2024,70.6,dk1_specific
+2025,75,dk1_specific_estimated
