@@ -65,9 +65,11 @@ class OUParameters:
 
 
 def _read_historical_prices(csv_path: str | Path) -> list[tuple[int, float]]:
-    """Reads (year, price) pairs, skipping rows with no price (the documented
-    2019 gap). Does NOT interpolate or guess — a missing year is simply absent
-    from the returned series."""
+    """Reads (year, NOMINAL price) pairs, skipping rows with no price (the
+    documented 2019 gap). Does NOT interpolate or guess — a missing year is
+    simply absent from the returned series. Deflation to real terms, if
+    requested, happens separately in calibrate() — this function only parses
+    the raw file."""
     series: list[tuple[int, float]] = []
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(row for row in f if not row.lstrip().startswith("#"))
@@ -79,6 +81,39 @@ def _read_historical_prices(csv_path: str | Path) -> list[tuple[int, float]]:
     return sorted(series)
 
 
+def _read_cpi_index(csv_path: str | Path) -> dict[int, float]:
+    """Reads year -> CPI index (rebased so index=100 at the base year the
+    caller deflates to). See data/dk_cpi_index.csv for sourcing."""
+    index: dict[int, float] = {}
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(row for row in f if not row.lstrip().startswith("#"))
+        for row in reader:
+            index[int(row["year"])] = float(row["index_2024_base"])
+    return index
+
+
+def _deflate_to_real(
+    series: list[tuple[int, float]], cpi_index: dict[int, float]
+) -> list[tuple[int, float]]:
+    """Converts NOMINAL (year, price) pairs to REAL 2024-EUR terms using the
+    CPI index: real = nominal * (100 / index_2024_base[year]). Raises if a
+    year in the price series has no matching CPI entry — silently skipping a
+    deflation is worse than failing loudly, since it would quietly mix real
+    and nominal values in the same calibration."""
+    deflated = []
+    missing_years = [y for y, _ in series if y not in cpi_index]
+    if missing_years:
+        raise ValueError(
+            f"No CPI index entry for year(s) {missing_years} in the CPI index file — "
+            "cannot deflate to real terms. Add them to data/dk_cpi_index.csv or set "
+            "price_model.calibration.deflate_to_real: false to use nominal prices as-is."
+        )
+    for year, nominal_price in series:
+        real_price = nominal_price * (100.0 / cpi_index[year])
+        deflated.append((year, real_price))
+    return deflated
+
+
 def calibrate(assumptions: dict) -> OUParameters:
     """Calibrates OU parameters from data/dk1_annual_prices.csv per the method
     and overrides declared in assumptions.yaml's price_model block."""
@@ -88,6 +123,11 @@ def calibrate(assumptions: dict) -> OUParameters:
 
     csv_path = calib["source_file"]
     series = _read_historical_prices(csv_path)
+
+    if calib.get("deflate_to_real", True):
+        cpi_index_path = calib["cpi_index_file"]
+        cpi_index = _read_cpi_index(cpi_index_path)
+        series = _deflate_to_real(series, cpi_index)
 
     n_obs = len(series)
     if n_obs < calib["min_observations"]:

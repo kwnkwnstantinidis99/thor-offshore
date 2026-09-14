@@ -1,0 +1,33 @@
+# Denmark Consumer Price Index, rebased to 2024=100.
+# Used to deflate nominal historical DK1/proxy electricity prices to real
+# 2024 EUR terms, per assumptions.yaml's declared money_terms: "real_2024"
+# and price_model.calibration.deflate_to_real: true.
+#
+# Source (2015-2024): OECD, "Consumer Price Indices (CPIs, HICPs), COICOP
+# 1999: Consumer Price Index: Total for Denmark" [DNKCPIALLAINMEI], via
+# FRED, Federal Reserve Bank of St. Louis. Original index base: 2015=100.
+# Rebased here by dividing through by the 2024 value.
+#
+# Source (2025): the OECD series above does not yet extend to 2025. The
+# 2025 figure is DERIVED, not directly sourced: the 2024->2025 annual
+# growth rate is computed from Statistics Denmark's monthly Harmonised
+# Index of Consumer Prices (HICP, base 2025=100) by averaging its 12
+# monthly values for each of 2024 and 2025, then applying that growth rate
+# to the OECD 2024 value. This mixes two index families (OECD national CPI
+# and Eurostat-harmonised HICP) to bridge a one-year gap; treated as an
+# estimate, not a like-for-like continuation of the OECD series.
+#
+# index_2024_base: 100.0 == 2024 price level. A nominal price in year Y is
+# deflated to real 2024 EUR via: real = nominal * (100 / index_2024_base[Y])
+year,index_2024_base,source
+2015,84.1633,oecd_cpi
+2016,84.3737,oecd_cpi
+2017,85.3415,oecd_cpi
+2018,86.0359,oecd_cpi
+2019,86.6882,oecd_cpi
+2020,87.0528,oecd_cpi
+2021,88.6660,oecd_cpi
+2022,95.4902,oecd_cpi
+2023,98.6463,oecd_cpi
+2024,100.0000,oecd_cpi
+2025,101.8433,derived_from_dst_hicp_growth
